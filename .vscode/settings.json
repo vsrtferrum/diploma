@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.dbclient-js": "javascript",
+        "qpsk_modem.h": "c",
+        "stdint.h": "c",
+        "coeffs.h": "c",
+        "signal_generator.h": "c",
+        "time.h": "c",
+        "iir_filter.h": "c"
+    }
+}

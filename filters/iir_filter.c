@@ -84,18 +84,13 @@ float iir_filter_process(iir_filter* filter, float input) {
         float* x_buf = &filter->x_buffer[i * 2];
         float* y_buf = &filter->y_buffer[i * 2];
 
-        // Текущий вход для секции (выход предыдущей секции)
         float x = output;
 
-        // Вычисление нового выхода
         float y = (b[0] * x + b[1] * x_buf[0] + b[2] * x_buf[1]
                  - a[1] * y_buf[0] - a[2] * y_buf[1]) / a[0];
-
-        // Обновление состояний входа
         x_buf[1] = x_buf[0];
         x_buf[0] = x;
 
-        // Обновление состояний выхода
         y_buf[1] = y_buf[0];
         y_buf[0] = y;
 

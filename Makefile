@@ -1,29 +1,63 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -I. -Iheaders -Iheaders/filters -Iheaders/infra
+CFLAGS = -O3 -Wall -Wextra -I. -Ifilters -Iqpsk -Isignal_generator
+LDFLAGS = -lm
+
+# Директории
+SRC_DIR = .
+FILTERS_DIR = filters
+QPSK_DIR = qpsk
+SIGNAL_DIR = signal_generator
+OBJ_DIR = obj
 BENCHMARK_DIR = benchmark
-HEADERS_DIR = headers
 
-.PHONY: all clean benchmark
+# Исходные файлы
+FILTERS_SRC = $(wildcard $(FILTERS_DIR)/*.c)
+QPSK_SRC = $(wildcard $(QPSK_DIR)/*.c)
+SIGNAL_SRC = $(wildcard $(SIGNAL_DIR)/*.c)
+BENCHMARK_SRC = $(wildcard $(BENCHMARK_DIR)/*.c)
 
-all: benchmark
+SRC = $(FILTERS_SRC) $(QPSK_SRC) $(SIGNAL_SRC) $(BENCHMARK_SRC)
+OBJ = $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(SRC)))
 
-benchmark: $(BENCHMARK_DIR)/benchmark.c $(BENCHMARK_DIR)/test_signals.c $(BENCHMARK_DIR)/performance_tests.c \
-          $(HEADERS_DIR)/filters/fir_filter.c $(HEADERS_DIR)/filters/iir_filter.c \
-          $(HEADERS_DIR)/filters/lms_filter.c $(HEADERS_DIR)/filters/rls_filter.c 
-	cp coeffs.txt $(BENCHMARK_DIR)/
-	$(CC) $(BENCHMARK_DIR)/benchmark.c $(BENCHMARK_DIR)/test_signals.c $(BENCHMARK_DIR)/performance_tests.c \
-		$(HEADERS_DIR)/filters/fir_filter.c $(HEADERS_DIR)/filters/iir_filter.c \
-		$(HEADERS_DIR)/filters/lms_filter.c $(HEADERS_DIR)/filters/rls_filter.c \
-		-o $(BENCHMARK_DIR)/benchmark $(CFLAGS) -lm
+# Исполняемый файл (изменено имя, чтобы избежать конфликта)
+TARGET = dsp_benchmark
 
-run_benchmark: benchmark
-	./$(BENCHMARK_DIR)/benchmark
+.PHONY: all clean run plot
 
-clean:
-	rm -f $(BENCHMARK_DIR)/benchmark
-	rm -f $(BENCHMARK_DIR)/coeffs.txt
+all: $(TARGET)
 
-calc_coeffs:
+# Сборка исполняемого файла
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Компиляция объектных файлов
+$(OBJ_DIR)/%.o: $(FILTERS_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(QPSK_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(SIGNAL_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/%.o: $(BENCHMARK_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Создание директории для объектных файлов
+$(OBJ_DIR):
+	mkdir -p $(OBJ_DIR)
+
+# Генерация коэффициентов и графиков
+plot:
 	python3 filters_calculation.py
 
+# Запуск тестов
+run: $(TARGET)
+	./$(TARGET)
 
+# Очистка
+clean:
+	rm -rf $(OBJ_DIR) $(TARGET) \
+	ber_comparison.png bit_comparison.png constellations.png \
+	impulse_responses.png pole_zero_plot.png spectrum_comparison.png \
+	coeffs.h
